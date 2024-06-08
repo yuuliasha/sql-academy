@@ -24,20 +24,45 @@ WHERE plane = "TU-134"
 -- 6. Какие компании совершали перелеты на Boeing
 SELECT Company.name
 FROM Trip
-	LEFT JOIN Company ON Company.id = Trip.company
+LEFT JOIN Company ON Company.id = Trip.company
 WHERE plane = 'Boeing'
 GROUP BY company
 
 -- 7. Вывести все названия самолётов, на которых можно улететь в Москву (Moscow)
+SELECT DISTINCT plane
+FROM Trip
+WHERE town_to = 'Moscow'
 
 -- 8. В какие города можно улететь из Парижа (Paris) и сколько времени это займёт?
 -- 9. Какие компании организуют перелеты из Владивостока (Vladivostok)?
+SELECT name
+FROM Company AS c
+LEFT JOIN Trip AS t ON c.id = t.company
+WHERE t.town_from = 'Vladivostok'
+
 -- 10. Вывести вылеты, совершенные с 10 ч. по 14 ч. 1 января 1900 г.
 -- 11. Выведите пассажиров с самым длинным ФИО. Пробелы, дефисы и точки считаются частью имени.
 -- 12. Вывести id и количество пассажиров для всех прошедших полётов
+SELECT trip, COUNT(passenger) AS count
+FROM Pass_in_trip
+GROUP BY trip
+	
 -- 13. Вывести имена людей, у которых есть полный тёзка среди пассажиров
+	
 -- 14. В какие города летал Bruce Willis
+SELECT DISTINCT town_to
+FROM Trip
+JOIN Pass_in_trip ON Trip.id = Pass_in_trip.trip
+JOIN Passenger ON Pass_in_trip.passenger = Passenger.id
+Where name = 'Bruce Willis'
+	
 -- 15. Выведите дату и время прилёта пассажира Стив Мартин (Steve Martin) в Лондон (London)
+SELECT t.time_in
+FROM Trip AS t
+JOIN Pass_in_trip AS pit ON t.id = trip
+JOIN Passenger AS p ON p.id = passenger
+WHERE name = 'Steve Martin' AND town_to = 'London'
+
 -- 16. Вывести отсортированный по количеству перелетов (по убыванию) и имени (по возрастанию) список пассажиров, 
        совершивших хотя бы 1 полет.
 -- 17. Определить, сколько потратил в 2005 году каждый из членов семьи. 
