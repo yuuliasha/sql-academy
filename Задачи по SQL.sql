@@ -1,10 +1,35 @@
 -- 1. Вывести имена всех людей, которые есть в базе данных авиакомпаний.
+SELECT name
+FROM Passenger
+
 -- 2. Вывести названия всеx авиакомпаний
+SELECT name
+FROM Company
+
 -- 3. Вывести все рейсы, совершенные из Москвы
+SELECT *
+FROM Trip
+WHERE town_from = 'Moscow'
+
 -- 4. Вывести имена людей, которые заканчиваются на "man"
+SELECT name
+FROM Passenger
+WHERE name like '%man'
+
 -- 5. Вывести количество рейсов, совершенных на TU-134
+SELECT COUNT(*) AS count
+FROM Trip
+WHERE plane = "TU-134"
+
 -- 6. Какие компании совершали перелеты на Boeing
+SELECT Company.name
+FROM Trip
+	LEFT JOIN Company ON Company.id = Trip.company
+WHERE plane = 'Boeing'
+GROUP BY company
+
 -- 7. Вывести все названия самолётов, на которых можно улететь в Москву (Moscow)
+
 -- 8. В какие города можно улететь из Парижа (Paris) и сколько времени это займёт?
 -- 9. Какие компании организуют перелеты из Владивостока (Vladivostok)?
 -- 10. Вывести вылеты, совершенные с 10 ч. по 14 ч. 1 января 1900 г.
