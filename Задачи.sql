@@ -2,8 +2,6 @@
 SELECT name
 FROM Passenger
 
-	  <summary>Решение</summary>
-
 -- 2. Вывести названия всеx авиакомпаний
 SELECT name
 FROM Company
