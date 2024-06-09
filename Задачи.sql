@@ -205,5 +205,11 @@ FROM Purchases
 WHERE user_gender = "female" or user_gender = "f"
 
 -- 101. Выведи для каждого пользователя первое наименование, которое он заказал (первое по времени транзакции).
+SELECT user_id, item
+FROM Transactions t
+WHERE t.transaction_ts = (SELECT MIN(transaction_ts)
+    FROM Transactions
+    WHERE user_id = t.user_id
+)
 -- 103. Вывести список имён сотрудников, получающих большую заработную плату, чем у непосредственного руководителя.
 
