@@ -1,6 +1,10 @@
 -- 1. Вывести имена всех людей, которые есть в базе данных авиакомпаний.
+<summary>Решение</summary>
+
 SELECT name
 FROM Passenger
+
+	  <summary>Решение</summary>
 
 -- 2. Вывести названия всеx авиакомпаний
 SELECT name
