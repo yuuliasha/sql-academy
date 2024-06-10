@@ -68,6 +68,11 @@ WHERE name = 'Steve Martin' AND town_to = 'London'
 -- 17. Определить, сколько потратил в 2005 году каждый из членов семьи. 
        В результирующей выборке не выводите тех членов семьи, которые ничего не потратили.
 -- 18. Выведите имя самого старшего человека. Если таких несколько, то выведите их всех.
+SELECT member_name
+fROM FamilyMembers
+Order BY birthday ASC 
+LIMIT 1
+
 -- 19. Определить, кто из членов семьи покупал картошку (potato)
 SELECT status
 From FamilyMembers fm
