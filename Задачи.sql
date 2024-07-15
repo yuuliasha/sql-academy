@@ -34,6 +34,10 @@ FROM Trip
 WHERE town_to = 'Moscow'
 
 -- 8. В какие города можно улететь из Парижа (Paris) и сколько времени это займёт?
+SELECT town_to,TIMEDIFF(time_in, time_out) as flight_time
+FROM trip
+WHERE town_from = 'Paris'
+	
 -- 9. Какие компании организуют перелеты из Владивостока (Vladivostok)?
 SELECT name
 FROM Company AS c
@@ -269,6 +273,7 @@ JOIN Teacher ON Teacher.id=Schedule.teacher AND last_name='Romashkin'
 SELECT start_pair
 FROM Timepair
 WHERE id = "4"
+
 -- 42. Сколько времени обучающийся будет находиться в школе, учась со 2-го по 4-ый уч. предмет?
 SELECT TIMEDIFF(MAX(end_pair), MIN(start_pair)) AS time
 FROM Timepair
@@ -311,8 +316,8 @@ HAVING count(classroom) = (
     FROM Schedule
     GROUP BY classroom
     ORDER BY count DESC
-    LIMIT 1
-);
+    LIMIT 1);
+
 -- 46. В каких классах введет занятия преподаватель "Krauze" ?
 SELECT DISTINCT name 
 FROM Class 
@@ -403,18 +408,10 @@ WHERE member_name LIKE '%Quincey'
 -- 55. Удалить компании, совершившие наименьшее количество рейсов.
 DELETE
 FROM company
-WHERE id IN (
-    SELECT company
-    FROM trip
-    GROUP BY company
-    HAVING COUNT(*) = (
-        SELECT COUNT(*) AS count
-        FROM trip
-        GROUP BY company
-        ORDER BY count
-        LIMIT 1
-    )
+WHERE id IN (SELECT company FROM trip GROUP BY company HAVING COUNT(*) = 
+(SELECT COUNT(*) AS count FROM trip GROUP BY company ORDER BY count LIMIT 1)
 );
+
 Второй вариант:
 SELECT name, COUNT(company) as company 
 FROM Trip JOIN Company ON Company.id=Trip.company 
@@ -510,6 +507,7 @@ ORDER BY year, month
 SELECT room_id, FLOOR(AVG(rating)) AS rating 
 FROM Reservations JOIN Reviews ON Reviews.reservation_id=Reservations.id 
 GROUP BY room_id
+
 -- 66. Вывести список комнат со всеми удобствами (наличие ТВ, интернета, кухни и кондиционера), 
        а также общее количество дней и сумму за все дни аренды каждой из таких комнат.
 SELECT home_type, address, COALESCE(SUM(DATEDIFF(end_date, start_date)), 0) as days, COALESCE(SUM(Reservations.total), 0) AS total_fee 
@@ -539,12 +537,14 @@ FROM (
          JOIN Reservations rsv ON rs.room_id = rsv.room_id
     AND rs.date = rsv.end_date
          JOIN Users us ON rsv.user_id = us.id;
+
 -- 69. Вывести идентификаторы всех владельцев комнат, что размещены на сервисе бронирования жилья и сумму, которую они заработали
 SELECT owner_id,
        IFNULL(SUM(total), 0) AS total_earn
 FROM Rooms rm
          LEFT JOIN Reservations rs ON rm.id = rs.room_id
 GROUP BY owner_id;
+
 -- 70. Необходимо категоризовать жилье на economy, comfort, premium по цене соответственно <= 100, 100 < цена < 200, >= 200. 
        В качестве результата вывести таблицу с названием категории и количеством жилья, попадающего в данную категорию
 SELECT 
