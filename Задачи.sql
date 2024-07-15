@@ -41,6 +41,9 @@ LEFT JOIN Trip AS t ON c.id = t.company
 WHERE t.town_from = 'Vladivostok'
 
 -- 10. Вывести вылеты, совершенные с 10 ч. по 14 ч. 1 января 1900 г.
+SELECT * FROM Trip 
+WHERE time_out BETWEEN '1900-01-01T10:00:00.000Z' AND '1900-01-01T14:00:00.000Z'
+	
 -- 11. Выведите пассажиров с самым длинным ФИО. Пробелы, дефисы и точки считаются частью имени.
 SELECT name
 FROM passenger
@@ -52,6 +55,10 @@ FROM Pass_in_trip
 GROUP BY trip
 	
 -- 13. Вывести имена людей, у которых есть полный тёзка среди пассажиров
+SELECT name
+FROM Passenger
+GROUP BY name
+HAVING COUNT(*) > 1
 	
 -- 14. В какие города летал Bruce Willis
 SELECT DISTINCT town_to
@@ -69,8 +76,18 @@ WHERE name = 'Steve Martin' AND town_to = 'London'
 
 -- 16. Вывести отсортированный по количеству перелетов (по убыванию) и имени (по возрастанию) список пассажиров, 
        совершивших хотя бы 1 полет.
+SELECT p.name, COUNT(passenger) AS count 
+FROM Trip AS t JOIN Pass_in_trip AS pit ON t.id = trip 
+JOIN Passenger AS p ON p.id = passenger GROUP BY p.name HAVING count >= 1 
+ORDER BY count DESC, p.name ASC
+	
 -- 17. Определить, сколько потратил в 2005 году каждый из членов семьи. 
        В результирующей выборке не выводите тех членов семьи, которые ничего не потратили.
+SELECT member_name,status, SUM(unit_price*amount) AS costs
+FROM Payments AS p JOIN FamilyMembers AS fm ON p.family_member = fm.member_id 
+WHERE date LIKE '2005%' 
+GROUP BY family_member
+
 -- 18. Выведите имя самого старшего человека. Если таких несколько, то выведите их всех.
 SELECT member_name
 fROM FamilyMembers
@@ -85,7 +102,15 @@ JOIN Goods AS g ON p.good = g.good_id
 WHERE good_name LIKE 'potato'
 GROUP BY status
 
--- 20. Сколько и кто из семьи потратил на развлечения (entertainment). Вывести статус в семье, имя, сумму
+-- 20. Сколько и кто из семьи потратил на развлечения (entertainment). 
+       Вывести статус в семье, имя, сумму
+SELECT status, member_name, SUM(unit_price*amount) AS costs 
+FROM FamilyMembers AS fm 
+JOIN Payments AS p ON fm.member_id = p.family_member 
+JOIN Goods AS g ON p.good = g.good_id 
+JOIN GoodTypes as gp ON g.type = gp.good_type_id 
+WHERE good_type_name = 'entertainment' GROUP BY family_member
+
 -- 21. Определить товары, которые покупали более 1 раза
 SELECT good_name
 FROM Goods
@@ -100,8 +125,26 @@ FROM FamilyMembers
 WHERE status = "mother"
 
 -- 23. Найдите самый дорогой деликатес (delicacies) и выведите его цену
+SELECT good_name,
+       unit_price
+FROM Goods gs
+         JOIN GoodTypes gt ON gs.type = gt.good_type_id
+         JOIN Payments ps ON gs.good_id = ps.good
+WHERE good_type_name = 'delicacies'
+ORDER BY unit_price DESC
+LIMIT 1
+	
 -- 24. Определить кто и сколько потратил в июне 2005
+SELECT member_name, SUM(unit_price*amount) as costs 
+FROM Payments as p JOIN FamilyMembers as fm ON p.family_member = fm.member_id 
+WHERE date LIKE '2005-06%' GROUP BY member_name
+	
 -- 25. Определить, какие товары не покупались в 2005 году
+SELECT good_name
+FROM Goods
+LEFT JOIN Payments ON Goods.good_id = Payments.good AND YEAR(Payments.date) = 2005 
+WHERE Payments.good IS NULL GROUP BY good_id
+
 -- 26. Определить группы товаров, которые не приобретались в 2005 году
 -- 27. Узнайте, сколько было потрачено на каждую из групп товаров в 2005 году. 
        Выведите название группы и потраченную на неё сумму. Если потраченная сумма равна нулю, 
@@ -208,7 +251,10 @@ WHERE town_from = "Moscow"
        Среднюю цену необходимо округлить до целого значения вверх.
 -- 73. Выведите id тех комнат, которые арендовали нечетное количество раз
 -- 74. Выведите идентификатор и признак наличия интернета в помещении. 
-       Если интернет в сдаваемом жилье присутствует, то выведите «YES», иначе «NO».
+Если интернет в сдаваемом жилье присутствует, то выведите «YES», иначе «NO».
+SELECT id,
+IF(has_internet = 1, 'YES', 'NO') AS has_internet
+FROM Rooms;
 -- 75. Выведите фамилию, имя и дату рождения студентов, кто был рожден в мае.
 SELECT last_name, first_name, birthday
 FROM Student
