@@ -145,18 +145,50 @@ FROM Goods
 LEFT JOIN Payments ON Goods.good_id = Payments.good AND YEAR(Payments.date) = 2005 
 WHERE Payments.good IS NULL GROUP BY good_id
 
+Второй вариант 
+SELECT good_name
+FROM Goods
+WHERE good_id NOT IN (
+    SELECT good
+    FROM Payments
+    WHERE YEAR(date) = 2005)
+
 -- 26. Определить группы товаров, которые не приобретались в 2005 году
+ SELECT good_type_name 
+ FROM GoodTypes 
+ WHERE good_type_id NOT IN (SELECT good_type_id FROM Goods 
+ JOIN Payments ON Goods.good_id = Payments.good AND YEAR(date) = 2005 
+ JOIN GoodTypes ON GoodTypes.good_type_id = Goods.type)
+	
 -- 27. Узнайте, сколько было потрачено на каждую из групп товаров в 2005 году. 
        Выведите название группы и потраченную на неё сумму. Если потраченная сумма равна нулю, 
        т.е. товары из этой группы не покупались в 2005 году, то не выводите её.
+SELECT good_type_name, SUM(amount*unit_price) AS costs 
+FROM GoodTypes JOIN Goods ON good_type_id = type 
+JOIN Payments ON good = good_id AND YEAR(date) = 2005 GROUP BY good_type_name
+	
 -- 28. Сколько рейсов совершили авиакомпании из Ростова (Rostov) в Москву (Moscow)?
 SELECT COUNT(town_from) as COUNT
 FROM trip
 WHERE town_from = "Rostov" AND town_to = "Moscow"
 	
 -- 29. Выведите имена пассажиров улетевших в Москву (Moscow) на самолете TU-134
+SELECT name
+FROM Passenger ps
+         JOIN Pass_in_trip pt ON ps.id = pt.passenger
+         JOIN Trip tr ON pt.trip = tr.id
+WHERE plane = 'TU-134'
+  AND town_to = 'Moscow'
+GROUP BY name
+	
 -- 30. Выведите нагруженность (число пассажиров) каждого рейса (trip). 
        Результат вывести в отсортированном виде по убыванию нагруженности.
+SELECT trip,
+       COUNT(passenger) AS count
+FROM Pass_in_trip
+GROUP BY trip
+ORDER BY count DESC
+	
 -- 31. Вывести всех членов семьи с фамилией Quincey.
 SELECT *
 FROM FamilyMembers
@@ -164,9 +196,20 @@ WHERE member_name LIKE "%Quincey"
 	
 -- 32. Вывести средний возраст людей (в годах), хранящихся в базе данных. 
        Результат округлите до целого в меньшую сторону.
+SELECT FLOOR(AVG(TIMESTAMPDIFF(YEAR, birthday, CURRENT_TIMESTAMP))) AS age
+FROM FamilyMembers
+
+Еще один вариант 
+SELECT FLOOR(AVG(FLOOR(DATEDIFF(NOW(), birthday)/365))) AS age
+FROM FamilyMembers
+
 -- 33. Найдите среднюю цену икры на основе данных, хранящихся в таблице Payments. 
        В базе данных хранятся данные о покупках красной (red caviar) и черной икры (black caviar). 
        В ответе должна быть одна строка со средней ценой всей купленной когда-либо икры.
+SELECT AVG(unit_price) AS cost
+FROM Payments ps
+JOIN Goods gs ON ps.good = gs.good_id
+WHERE good_name = 'red caviar' OR good_name = 'black caviar'
 	
 -- 34. Сколько всего 10-ых классов
 Select COUNT (name) as count
@@ -174,12 +217,27 @@ From Class
 WHERE name LIKE '10%'
 
 -- 35. Сколько различных кабинетов школы использовались 2 сентября 2019 года для проведения занятий?
+SELECT DISTINCT COUNT(classroom) AS count 
+FROM Schedule 
+WHERE date LIKE '2019-09-02%'
+
+Второй вариант:
+SELECT COUNT(DISTINCT classroom) AS count
+FROM Student_in_class sc
+JOIN Class cl ON sc.class = cl.id
+JOIN Schedule sh ON sh.class = cl.id
+WHERE DATE_FORMAT(date, '%e.%m.%Y') = '2.09.2019'
+
 -- 36. Выведите информацию об обучающихся живущих на улице Пушкина (ul. Pushkina)?
 SELECT *
 FROM Student
 WHERE address LIKE 'ul. Pushkina%'
 	
--- 37. Сколько лет самому молодому обучающемуся ?
+-- 37. Сколько лет самому молодому обучающемуся?
+SELECT TIMESTAMPDIFF(YEAR, birthday, CURRENT_TIMESTAMP) AS year
+FROM Student
+ORDER BY year ASC
+LIMIT 1
 
 -- 38. Сколько Анн (Anna) учится в школе ?
 SELECT COUNT(first_name) AS count
@@ -194,29 +252,131 @@ WHERE name = '10 B'
 
 -- 40. Выведите название предметов, которые преподает Ромашкин П.П. (Romashkin P.P.). 
        Обратите внимание, что в базе данных есть несколько учителей с такими фамилией и инициалами.
+SELECT name AS subjects
+FROM Subject sj
+         JOIN Schedule sc ON sj.id = sc.subject
+         JOIN Teacher tc ON tc.id = sc.teacher
+WHERE last_name = 'Romashkin'
+  AND first_name LIKE 'P%'
+  AND middle_name LIKE 'P%'
+
+Второй вариант: 
+SELECT DISTINCT(Subject.name) AS subjects 
+FROM Subject JOIN Schedule ON Subject.id=Schedule.subject 
+JOIN Teacher ON Teacher.id=Schedule.teacher AND last_name='Romashkin'
+	
 -- 41. Выясните, во сколько по расписанию начинается четвёртое занятие.
 SELECT start_pair
 FROM Timepair
 WHERE id = "4"
 -- 42. Сколько времени обучающийся будет находиться в школе, учась со 2-го по 4-ый уч. предмет?
+SELECT TIMEDIFF(MAX(end_pair), MIN(start_pair)) AS time
+FROM Timepair
+WHERE id BETWEEN 2 AND 4
+
+Второй вариант:
+SELECT DISTINCT TIMEDIFF((SELECT end_pair 
+FROM Timepair WHERE id = 4), (SELECT start_pair FROM Timepair WHERE id = 2)) as time FROM Timepair
+	
 -- 43. Выведите фамилии преподавателей, которые ведут физическую культуру (Physical Culture). Отсортируйте преподавателей по фамилии в алфавитном порядке.
+SELECT last_name
+FROM Teacher tc
+         JOIN Schedule sc ON tc.id = sc.teacher
+         JOIN Subject sj ON sj.id = sc.subject
+WHERE name = 'Physical Culture'
+ORDER BY last_name
+	
 -- 44. Найдите максимальный возраст (количество лет) среди обучающихся 10 классов на сегодняшний день. 
        Для получения текущих даты и времени используйте функцию NOW().
 -- 45. Какие кабинеты чаще всего использовались для проведения занятий? Выведите те, которые использовались максимальное количество раз.
 -- 46. В каких классах введет занятия преподаватель "Krauze" ?
+SELECT DISTINCT name 
+FROM Class 
+JOIN Schedule ON Class.id=Schedule.class 
+JOIN Teacher ON Teacher.id=Schedule.teacher 
+WHERE last_name = 'Krauze'
+
+Второй вариант: 
+SELECT name
+FROM Schedule sc
+JOIN Teacher tc ON tc.id = sc.teacher
+JOIN Class cl ON cl.id = sc.class
+WHERE last_name = 'Krauze'
+GROUP BY name
+	
 -- 47. Сколько занятий провел Krauze 30 августа 2019 г.?
+SELECT COUNT(teacher) AS count 
+FROM Schedule JOIN Teacher ON Teacher.id=Schedule.teacher AND last_name = 'Krauze' 
+WHERE date LIKE '2019-08-30%'
+
+Второй вариант:
+SELECT COUNT(*) AS count
+FROM Schedule sc
+JOIN Teacher tc ON tc.id = sc.teacher
+WHERE DATE_FORMAT(date, '%e %M %Y') = '30 August 2019'
+  AND last_name = 'Krauze'
+
 -- 48. Выведите заполненность классов в порядке убывания
+SELECT name, COUNT(class) as count 
+FROM Class JOIN Student_in_class ON Class.id=Student_in_class.class 
+GROUP BY name
+ORDER BY COUNT(*) DESC
+
+Второй вариант: 
+SELECT name, COUNT(student) AS count
+FROM Class cl
+JOIN Student_in_class sc ON sc.class = cl.id
+GROUP BY name
+ORDER BY count DESC
+
 -- 49. Какой процент обучающихся учится в "10 A" классе? 
        Выведите ответ в диапазоне от 0 до 100 с округлением до четырёх знаков после запятой, например, 96.0201.
+
+SELECT (COUNT(*)*100/(SELECT COUNT(Student.id) as count 
+FROM Student 
+JOIN Student_in_class ON Student.id=Student_in_class.student)) AS percent 
+FROM Student_in_class JOIN Class ON Class.id=Student_in_class.class AND name = '10 A'
+
 -- 50. Какой процент обучающихся родился в 2000 году? Результат округлить до целого в меньшую сторону.
+SELECT FLOOR((COUNT(*)*100/(SELECT COUNT(Student.id) as count 
+FROM Student JOIN Student_in_class ON Student.id=Student_in_class.student))) AS percent 
+FROM Student 
+WHERE YEAR(birthday) = 2000
+	
 -- 51. Добавьте товар с именем "Cheese" и типом "food" в список товаров (Goods).
+INSERT INTO Goods
+SET good_id   = (SELECT COUNT(*) + 1
+FROM Goods AS gs
+),
+    good_name = 'Cheese',
+    type      = (SELECT good_type_id
+                 FROM GoodTypes
+	         WHERE good_type_name = 'food'
+);
+
+Второй вариант:
+INSERT INTO Goods(good_id, good_name, type) 
+VALUES (17, 'Cheese', 2)
+	
 -- 52. Добавьте в список типов товаров (GoodTypes) новый тип "auto".
+INSERT INTO GoodTypes(good_type_id, good_type_name) 
+VALUES (9, 'auto')
+
+Второй варинат:
+INSERT INTO GoodTypes
+SET good_type_id  = (SELECT COUNT(*) + 1
+                       FROM GoodTypes AS gt), good_type_name = 'auto'
 	
 -- 53. Измените имя "Andie Quincey" на новое "Andie Anthony".
 UPDATE FamilyMembers
 SET member_name = 'Andie Anthony'
 WHERE member_name = 'Andie Quincey'
+	
 -- 54. Удалить всех членов семьи с фамилией "Quincey".
+DELETE 
+FROM FamilyMembers 
+WHERE member_name LIKE '%Quincey'
+	
 -- 55. Удалить компании, совершившие наименьшее количество рейсов.
 	
 -- 56. Удалить все перелеты, совершенные из Москвы (Moscow).
@@ -225,6 +385,16 @@ FROM Trip
 WHERE town_from = "Moscow" 
 	
 -- 57. Перенести расписание всех занятий на 30 мин. вперед.
+UPDATE Timepair 
+SET start_pair = DATE_ADD(start_pair, INTERVAL 30 MINUTE); 
+UPDATE Timepair 
+SET end_pair = DATE_ADD(end_pair, INTERVAL 30 MINUTE)
+
+Второй вариант: 
+UPDATE Timepair
+SET start_pair = ADDTIME(start_pair, '00:30:00'),
+    end_pair   = ADDTIME(end_pair, '00:30:00');
+
 -- 58. Добавить отзыв с рейтингом 5 на жилье, находящиеся по адресу "11218, Friel Place, New York", от имени "George Clooney"
 -- 59. Вывести пользователей,указавших Белорусский номер телефона ? Телефонный код Белоруссии +375.
 -- 60. Выведите идентификаторы преподавателей, которые хотя бы один раз за всё время преподавали в каждом из одиннадцатых классов.
